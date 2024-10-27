@@ -5293,3 +5293,32 @@ a.credit {
 /* Common Style */
 .section {
   padding-bottom: 0; }
+
+  .position {
+    margin-top: 20px;
+    padding-left: 20px;
+    position: relative;
+}
+.position:before {
+    content: "•";
+    color: #333;
+    font-size: 1.5em;
+    position: absolute;
+    left: -20px;
+    top: 0;
+}
+.position-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+.position-details {
+    font-size: 0.9em;
+    color: #666;
+}
+.position-description {
+    margin-top: 5px;
+    font-size: 1em;
+    color: #333;
+}
