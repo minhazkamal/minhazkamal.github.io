@@ -957,22 +957,59 @@
         logAndDisplayVisitorCount(); // Run the function when the page loads
     });
     async function logAndDisplayVisitorCount() {
-        try {
-            let response = await fetch("https://api.ipify.org?format=json");
-            let data = await response.json();
-            let ip = data.ip;
+        const fallbackCount = 0;
+        updateCounter(fallbackCount);
 
-            let geoResponse = await fetch(`https://ipapi.co/${ip}/json/`);
-            let geoData = await geoResponse.json();
-            let country = geoData.country_name || "Unknown";
+        try {
+            let ip = "unknown";
+            let country = "Unknown";
+
+            try {
+                let response = await fetch("https://api.ipify.org?format=json", { cache: "no-store" });
+                if (response.ok) {
+                    let data = await response.json();
+                    ip = data.ip || ip;
+                }
+            } catch (error) {
+                console.warn("Could not fetch IP address:", error);
+            }
+
+            try {
+                if (ip !== "unknown") {
+                    let geoResponse = await fetch(`https://ipapi.co/${ip}/json/`, { cache: "no-store" });
+                    if (geoResponse.ok) {
+                        let geoData = await geoResponse.json();
+                        country = geoData.country_name || country;
+                    }
+                }
+            } catch (error) {
+                console.warn("Could not fetch geo data:", error);
+            }
 
             let scriptURL = "https://script.google.com/macros/s/AKfycbyCsePxXtmYH4LB_bTA8IxctxoCp_xu7jYbXUdWP5XM6OFFDrKvaJY-2IzIpwebld9PJQ/exec";
-            let logResponse = await fetch(`${scriptURL}?ip=${ip}&country=${country}`);
-            let logData = await logResponse.json();
+            let params = new URLSearchParams({ ip, country });
+            let logResponse = await fetch(`${scriptURL}?${params.toString()}`, { cache: "no-store" });
+            if (!logResponse.ok) {
+                throw new Error(`Counter request failed with status ${logResponse.status}`);
+            }
 
-            updateCounter(logData.count);
+            let responseText = await logResponse.text();
+            let logData;
+            try {
+                logData = JSON.parse(responseText);
+            } catch (error) {
+                logData = { count: responseText };
+            }
+
+            let count = Number(logData.count);
+            if (Number.isFinite(count)) {
+                updateCounter(count);
+            } else {
+                throw new Error("Counter response did not include a numeric count.");
+            }
         } catch (error) {
             console.log("Error logging visitor:", error);
+            updateCounter(fallbackCount);
         }
     }
 
